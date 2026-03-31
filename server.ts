@@ -110,8 +110,17 @@ async function startServer() {
     const prompt = `${basePrompt}\n\nCode:\n${code}`;
 
     try {
+      const apiKey = process.env.GEMINI_API_KEY;
+      if (!apiKey || apiKey === "MY_GEMINI_API_KEY") {
+        console.error("GEMINI_API_KEY is missing or has placeholder value.");
+        return res.status(500).json({ error: "Gemini API key is not configured. Please add it to your secrets in the AI Studio Settings menu." });
+      }
+
+      // Log key info safely for debugging
+      console.log(`Using API key: length=${apiKey.length}, prefix=${apiKey.substring(0, 4)}...`);
+
       const { GoogleGenAI, Type } = await import("@google/genai");
-      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
+      const ai = new GoogleGenAI({ apiKey });
       
       const response = await ai.models.generateContent({
         model: "gemini-3-flash-preview",
