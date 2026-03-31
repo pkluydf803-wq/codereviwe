@@ -24,8 +24,8 @@ if (fs.existsSync(firebaseConfigPath)) {
     });
   }
   
-  // Use the specific database ID if provided
-  db = admin.firestore(firebaseConfig.firestoreDatabaseId);
+  // Use the specific database ID if provided, otherwise use default
+  db = firebaseConfig.firestoreDatabaseId ? admin.firestore(firebaseConfig.firestoreDatabaseId) : admin.firestore();
 }
 
 async function startServer() {
