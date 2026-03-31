@@ -1,0 +1,64 @@
+{
+  "entities": {
+    "Webhook": {
+      "title": "Webhook",
+      "description": "A webhook request received from an external source.",
+      "type": "object",
+      "properties": {
+        "code": { "type": "string" },
+        "language": { "type": "string" },
+        "title": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "status": { "type": "string", "enum": ["pending", "reviewed"] },
+        "result": { "$ref": "ReviewResult" }
+      },
+      "required": ["code", "language", "title", "timestamp", "status"]
+    },
+    "ReviewResult": {
+      "title": "ReviewResult",
+      "description": "The result of an AI code review.",
+      "type": "object",
+      "properties": {
+        "bugs": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "line": { "type": "integer" },
+              "description": { "type": "string" },
+              "severity": { "type": "string", "enum": ["low", "medium", "high"] }
+            },
+            "required": ["line", "description", "severity"]
+          }
+        },
+        "fixedCode": { "type": "string" },
+        "explanation": { "type": "string" }
+      },
+      "required": ["bugs", "fixedCode", "explanation"]
+    },
+    "ReviewHistory": {
+      "title": "ReviewHistory",
+      "description": "A record of a completed code review.",
+      "type": "object",
+      "properties": {
+        "code": { "type": "string" },
+        "language": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "result": { "$ref": "ReviewResult" },
+        "toolName": { "type": "string" },
+        "userId": { "type": "string" }
+      },
+      "required": ["code", "language", "timestamp", "result"]
+    }
+  },
+  "firestore": {
+    "/webhooks/{webhookId}": {
+      "schema": "Webhook",
+      "description": "Collection of received webhook requests."
+    },
+    "/reviews/{reviewId}": {
+      "schema": "ReviewHistory",
+      "description": "Collection of completed code reviews."
+    }
+  }
+}

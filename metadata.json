@@ -1,0 +1,5 @@
+{
+  "name": "CodeReview AI",
+  "description": "Automated code review, bug fixing, and explanation tool with webhook support.",
+  "requestFramePermissions": []
+}
