@@ -19,8 +19,14 @@ export async function reviewCode(code: string, language: string, customPrompt?: 
     clearTimeout(timeoutId);
 
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({ error: "Unknown server error" }));
-      throw new Error(errorData.error || "Failed to perform AI review");
+      let errorMessage = `Server error (${response.status})`;
+      try {
+        const errorData = await response.json();
+        errorMessage = errorData.error || errorMessage;
+      } catch (e) {
+        // Fallback to status code if JSON parsing fails
+      }
+      throw new Error(errorMessage);
     }
 
     return await response.json();
