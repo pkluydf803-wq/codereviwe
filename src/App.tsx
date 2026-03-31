@@ -48,6 +48,7 @@ export default function App() {
   const [language, setLanguage] = useState('javascript');
   const [isReviewing, setIsReviewing] = useState(false);
   const [result, setResult] = useState<ReviewResult | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const [webhooks, setWebhooks] = useState<WebhookRequest[]>([]);
   const [selectedWebhook, setSelectedWebhook] = useState<WebhookRequest | null>(null);
   const [isPolling, setIsPolling] = useState(true);
@@ -173,12 +174,14 @@ export default function App() {
     if (!code.trim()) return;
     setIsReviewing(true);
     setResult(null);
+    setError(null);
     try {
       const review = await reviewCode(code, language, customPrompt);
       setResult(review);
       await saveReviewToHistory(review, code, language, toolName);
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
+      setError(err.message || "Failed to perform AI review");
     } finally {
       setIsReviewing(false);
     }
@@ -187,6 +190,7 @@ export default function App() {
   const handleWebhookReview = async (webhook: WebhookRequest) => {
     if (!webhook.id) return;
     setIsReviewing(true);
+    setError(null);
     try {
       const review = await reviewCode(webhook.code, webhook.language);
       const updated = { ...webhook, status: 'reviewed' as const, result: review };
@@ -199,8 +203,9 @@ export default function App() {
       
       setSelectedWebhook(updated);
       await saveReviewToHistory(review, webhook.code, webhook.language, 'Webhook');
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
+      setError(err.message || "Failed to perform AI review");
     } finally {
       setIsReviewing(false);
     }
@@ -462,6 +467,12 @@ export default function App() {
           
           <div className="flex items-center gap-4">
             <div className={`px-3 py-1 rounded-full border ${s.border} bg-[#1A1A1A] flex items-center gap-2`}>
+              <div className="w-2 h-2 rounded-full bg-[#3B82F6] animate-pulse" />
+              <span className={`text-[10px] font-bold uppercase tracking-widest ${s.text}`}>
+                {window.location.hostname.includes('run.app') ? 'AI Studio Preview' : 'Production'}
+              </span>
+            </div>
+            <div className={`px-3 py-1 rounded-full border ${s.border} bg-[#1A1A1A] flex items-center gap-2`}>
               <div className="w-2 h-2 rounded-full bg-[#22C55E] animate-pulse" />
               <span className="text-[10px] font-bold uppercase tracking-widest text-[#22C55E]">System Online</span>
             </div>
@@ -562,6 +573,23 @@ export default function App() {
                         <Loader2 className="animate-spin mb-4 text-[#3B82F6]" size={48} />
                         <h2 className={`text-xl font-serif italic tracking-tight ${s.text}`}>Analyzing Codebase...</h2>
                         <p className={`text-[10px] uppercase tracking-[0.2em] ${s.muted} mt-2`}>Gemini AI is scanning for vulnerabilities</p>
+                      </motion.div>
+                    ) : error ? (
+                      <motion.div 
+                        key="error"
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className={`h-full flex flex-col items-center justify-center p-12 border border-dashed border-[#EF4444] rounded-sm ${s.card}`}
+                      >
+                        <AlertCircle className="mb-4 text-[#EF4444]" size={48} />
+                        <h2 className="text-xl font-serif italic tracking-tight text-[#EF4444]">Analysis Failed</h2>
+                        <p className={`text-xs ${s.muted} mt-2 text-center max-w-md`}>{error}</p>
+                        <button 
+                          onClick={() => handleManualReview()}
+                          className="mt-6 px-6 py-2 bg-[#EF4444] text-white text-[10px] font-bold uppercase tracking-widest rounded-sm hover:bg-[#DC2626] transition-all"
+                        >
+                          Retry Analysis
+                        </button>
                       </motion.div>
                     ) : result ? (
                       <motion.div 

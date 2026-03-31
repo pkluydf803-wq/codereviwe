@@ -121,7 +121,7 @@ async function startServer() {
     const prompt = `${basePrompt}\n\nCode:\n${code}`;
 
     try {
-      fs.appendFileSync("debug.log", `Request received. MY_CUSTOM_GEMINI_API_KEY: ${process.env.MY_CUSTOM_GEMINI_API_KEY ? "set" : "not set"}\n`);
+      fs.appendFileSync("debug.log", `Request received. MY_CUSTOM_GEMINI_API_KEY: ${process.env.MY_CUSTOM_GEMINI_API_KEY ? "set" : "not set"}, GEMINI_API_KEY: ${process.env.GEMINI_API_KEY ? "set" : "not set"}\n`);
       console.log("Checking API keys:", {
         customKey: process.env.MY_CUSTOM_GEMINI_API_KEY ? "set" : "not set",
         defaultKey: process.env.GEMINI_API_KEY ? "set" : "not set"
@@ -167,10 +167,21 @@ async function startServer() {
         }
       });
 
-      res.json(JSON.parse(response.text || "{}"));
-    } catch (err) {
+      const responseText = response.text || "{}";
+      try {
+        res.json(JSON.parse(responseText));
+      } catch (parseErr) {
+        console.error("Failed to parse AI response as JSON:", responseText);
+        fs.appendFileSync("debug.log", `Failed to parse AI response as JSON: ${responseText}\n`);
+        throw new Error("AI returned an invalid response format. Please try again.");
+      }
+    } catch (err: any) {
       console.error("Error performing AI review:", err);
-      res.status(500).json({ error: "Failed to perform AI review" });
+      fs.appendFileSync("debug.log", `Error performing AI review: ${err.message || err}\n`);
+      if (err.stack) {
+        fs.appendFileSync("debug.log", `Stack trace: ${err.stack}\n`);
+      }
+      res.status(500).json({ error: err.message || "Failed to perform AI review" });
     }
   });
 
