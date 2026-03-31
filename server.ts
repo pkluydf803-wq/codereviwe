@@ -6,6 +6,17 @@ import bodyParser from "body-parser";
 import cors from "cors";
 import fs from "fs";
 import admin from "firebase-admin";
+import dotenv from "dotenv";
+
+// Load environment variables from .env file
+const result = dotenv.config({ path: path.join(process.cwd(), ".env") });
+fs.appendFileSync("debug.log", `Dotenv result: ${JSON.stringify(result)}\n`);
+if (result.error) {
+  console.warn("Dotenv could not load .env file:", result.error);
+} else {
+  console.log(".env file loaded successfully");
+}
+fs.appendFileSync("debug.log", `MY_CUSTOM_GEMINI_API_KEY: ${process.env.MY_CUSTOM_GEMINI_API_KEY ? "set" : "not set"}\n`);
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -110,10 +121,16 @@ async function startServer() {
     const prompt = `${basePrompt}\n\nCode:\n${code}`;
 
     try {
-      const apiKey = process.env.GEMINI_API_KEY;
+      fs.appendFileSync("debug.log", `Request received. MY_CUSTOM_GEMINI_API_KEY: ${process.env.MY_CUSTOM_GEMINI_API_KEY ? "set" : "not set"}\n`);
+      console.log("Checking API keys:", {
+        customKey: process.env.MY_CUSTOM_GEMINI_API_KEY ? "set" : "not set",
+        defaultKey: process.env.GEMINI_API_KEY ? "set" : "not set"
+      });
+      const apiKey = process.env.MY_CUSTOM_GEMINI_API_KEY || process.env.GEMINI_API_KEY;
       if (!apiKey || apiKey === "MY_GEMINI_API_KEY") {
         console.error("GEMINI_API_KEY is missing or has placeholder value.");
-        return res.status(500).json({ error: "Gemini API key is not configured. Please add it to your secrets in the AI Studio Settings menu." });
+        const keyLength = apiKey ? apiKey.length : 0;
+        return res.status(500).json({ error: `DEBUG_ERROR_CODE_123: API key length is ${keyLength}. Please check your .env file.` });
       }
 
       // Log key info safely for debugging
