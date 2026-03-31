@@ -4,6 +4,8 @@ import {
   getAuth, 
   GoogleAuthProvider, 
   signInWithPopup, 
+  signInWithRedirect,
+  getRedirectResult,
   onAuthStateChanged, 
   User,
   signInWithEmailAndPassword,
@@ -90,10 +92,28 @@ testConnection();
 
 export const loginWithGoogle = async () => {
   try {
+    // In an iframe (like AI Studio), signInWithPopup is often blocked.
+    // signInWithRedirect is more reliable but requires the app to reload.
+    // However, for this environment, we'll try popup first and catch the error.
     const result = await signInWithPopup(auth, googleProvider);
     return result.user;
+  } catch (error: any) {
+    if (error.code === 'auth/popup-blocked' || error.code === 'auth/cancelled-popup-request') {
+      console.warn("Popup blocked or cancelled, trying redirect...");
+      await signInWithRedirect(auth, googleProvider);
+    } else {
+      console.error("Login Error:", error);
+      throw error;
+    }
+  }
+};
+
+export const handleRedirectResult = async () => {
+  try {
+    const result = await getRedirectResult(auth);
+    return result?.user;
   } catch (error) {
-    console.error("Login Error:", error);
+    console.error("Redirect Result Error:", error);
     throw error;
   }
 };

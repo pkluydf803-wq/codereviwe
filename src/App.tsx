@@ -30,7 +30,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { ReviewResult, WebhookRequest, AITool, Theme, ReviewHistoryItem } from './types';
 import { reviewCode } from './utils/gemini';
 import { themeStyles } from './constants';
-import { auth, db, loginWithGoogle, loginWithEmail, registerWithEmail, logout, handleFirestoreError, OperationType } from './firebase';
+import { auth, db, loginWithGoogle, loginWithEmail, registerWithEmail, logout, handleFirestoreError, OperationType, handleRedirectResult } from './firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { collection, onSnapshot, query, orderBy, addDoc, serverTimestamp, deleteDoc, getDocs, writeBatch, updateDoc, doc } from 'firebase/firestore';
 import { CHALLENGES } from './constants';
@@ -76,6 +76,10 @@ export default function App() {
       setUser(user);
       setIsAuthReady(true);
     });
+
+    // Handle redirect result if any
+    handleRedirectResult().catch(err => console.error("Redirect error:", err));
+
     return () => unsubscribe();
   }, []);
 
@@ -350,7 +354,13 @@ export default function App() {
           </div>
 
           <button 
-            onClick={loginWithGoogle}
+            onClick={async () => {
+              try {
+                await loginWithGoogle();
+              } catch (err: any) {
+                setAuthError(err.message || 'Google login failed');
+              }
+            }}
             className={`w-full py-3 ${s.inputBg} ${s.inputText} border ${s.border} rounded-sm font-bold uppercase tracking-widest text-xs hover:bg-[#1A1A1A] transition-all flex items-center justify-center gap-3`}
           >
             <ShieldAlert size={18} className="text-[#3B82F6]" />
